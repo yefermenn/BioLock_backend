@@ -1,0 +1,13 @@
+[
+  {
+    "name": "default",
+    "type": "postgres",
+    "host": "${DB_HOST}",
+    "port": 5432,
+    "username": "${DB_USERNAME}",
+    "password": "${DB_PASSWORD}",
+    "database": "${DB_NAME}",
+    "synchronize": true,
+    "entities": ["src/entities/entities/*.js"]
+  }
+]
