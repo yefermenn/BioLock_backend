@@ -1,0 +1,103 @@
+Body mínimo y completo para POST /api/v1/eventos
+
+Regla general:
+- El Authorization debe llegar en el header como: Bearer <token_del_dispositivo>
+- El dispositivo se identifica por el token, no por el JSON.
+- El dispositivo_id y la zona_id se obtienen del token del dispositivo y de la relación dispositivos_zonas.
+- El campo id_local es obligatorio para detectar duplicados en accesos e intentos fallidos.
+- Para tipo permitidos/remotos/salida: el evento se guarda en accesos.
+- Para tipo denegado: el evento se guarda en intentos_fallidos.
+- Para tipo alarma: el evento se guarda en alarmas y, si existe, se enlaza el último intento fallido.
+- Si usuario_id viene null y tipo es permitido, el backend intenta buscar al usuario por nombre temporalmente.
+
+1) Caso mínimo válido para acceso permitido
+{
+  "id_local": 101,
+  "tipo": "permitido",
+  "origen": "camara",
+  "usuario_id": 12,
+  "nombre": "Ana López",
+  "score": 0.9895,
+  "ocurrido_en": "2026-11-04T16:31:10-05:00",
+  "tiene_foto": false
+}
+
+2) Caso completo para acceso permitido (usuario_id null, resuelve por nombre)
+{
+  "id_local": 101,
+  "tipo": "permitido",
+  "origen": "camara",
+  "usuario_id": null,
+  "nombre": "Ana López",
+  "score": 0.9895,
+  "ocurrido_en": "2026-11-04T16:31:10-05:00",
+  "tiene_foto": false
+}
+
+3) Caso mínimo válido para acceso remoto
+{
+  "id_local": 102,
+  "tipo": "remoto",
+  "origen": "app",
+  "usuario_id": 12,
+  "nombre": "Ana López",
+  "score": 0.9912,
+  "ocurrido_en": "2026-11-04T16:31:12-05:00",
+  "tiene_foto": false
+}
+
+4) Caso mínimo válido para salida
+{
+  "id_local": 103,
+  "tipo": "salida",
+  "origen": "camara",
+  "usuario_id": 12,
+  "nombre": "Ana López",
+  "score": null,
+  "ocurrido_en": "2026-11-04T16:31:15-05:00",
+  "tiene_foto": false
+}
+
+5) Caso mínimo válido para intento fallido
+{
+  "id_local": 104,
+  "tipo": "denegado",
+  "origen": "camara",
+  "usuario_id": null,
+  "nombre": null,
+  "score": 0.4123,
+  "ocurrido_en": "2026-11-04T16:31:20-05:00",
+  "tiene_foto": true
+}
+
+6) Caso mínimo válido para alarma
+{
+  "id_local": 105,
+  "tipo": "alarma",
+  "origen": "camara",
+  "usuario_id": null,
+  "nombre": null,
+  "score": null,
+  "ocurrido_en": "2026-11-04T16:31:10-05:00",
+  "tiene_foto": true
+}
+
+7) Caso completo para alarma
+{
+  "id_local": 105,
+  "tipo": "alarma",
+  "origen": "camara",
+  "usuario_id": null,
+  "nombre": null,
+  "score": null,
+  "ocurrido_en": "2026-11-04T16:31:10-05:00",
+  "tiene_foto": true,
+  "observaciones": "Movimiento sospechoso en puerta principal"
+}
+
+Notas importantes:
+- Para tipo alarma, el campo tiene_foto puede llegar en true, pero no se guarda directamente en la tabla alarmas porque esa tabla no tiene ese campo; solo se usa para el flujo de fotos si luego se integra con la copia de archivos/foto_ruta.
+- El valor de score para alarma suele venir en null. Si llega un valor, no se usa como columna en alarmas; el registro se guarda en la tabla de alarmas con campos básicos y sin score.
+- La validación de duplicado para alarmas no usa id_local porque alarmas no tiene esa columna; por ahora se revisa dispositivo_id + fecha exacta.
+- La validación de duplicado para accesos e intentos_fallidos sí usa (dispositivo_id, id_local).
+- Para salidas, usuario_id puede quedar null, y el acceso se registra con tipo_acceso = 'salida'.

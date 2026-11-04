@@ -15,6 +15,7 @@ import { AlarmasModule } from './alarmas/alarmas.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { ReportesModule } from './reportes/reportes.module.js';
 import { AuditoriaModule } from './auditoria/auditoria.module.js';
+import { EventosModule } from './eventos/eventos.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermisosGuard } from './common/guards/permisos.guard.js';
 
@@ -46,6 +47,7 @@ import { PermisosGuard } from './common/guards/permisos.guard.js';
     DashboardModule,
     ReportesModule,
     AuditoriaModule,
+    EventosModule,
   ],
   controllers: [AppController],
   providers: [
