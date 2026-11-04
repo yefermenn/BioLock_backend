@@ -6,7 +6,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Dispositivos } from "./Dispositivos.js";
+import type { Dispositivos } from "./Dispositivos.js";
 
 @Index("configuracion_dispositivo_id_key", ["dispositivoId"], { unique: true })
 @Index("configuracion_pkey", ["id"], { unique: true })
@@ -51,7 +51,7 @@ export class Configuracion {
   })
   updatedAt: Date;
 
-  @OneToOne(() => Dispositivos, (dispositivos) => dispositivos.configuracion, {
+  @OneToOne("Dispositivos", (dispositivos: Dispositivos) => dispositivos.configuracion, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "dispositivo_id", referencedColumnName: "id" }])

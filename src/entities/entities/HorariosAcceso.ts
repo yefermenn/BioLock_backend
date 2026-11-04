@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Zonas } from "./Zonas.js";
+import type { Zonas } from "./Zonas.js";
 
 @Index("ix_horarios_zona_dia", ["diaSemana", "zonaId"], {})
 @Index("horarios_acceso_pkey", ["id"], { unique: true })
@@ -30,7 +30,7 @@ export class HorariosAcceso {
   @Column("boolean", { name: "activo", default: () => "true" })
   activo: boolean;
 
-  @ManyToOne(() => Zonas, (zonas) => zonas.horariosAccesos, {
+  @ManyToOne("Zonas", (zonas: Zonas) => zonas.horariosAccesos, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "zona_id", referencedColumnName: "id" }])

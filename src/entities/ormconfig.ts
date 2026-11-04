@@ -10,7 +10,7 @@ export default {
   username: process.env.DB_USERNAME ?? 'postgres',
   password: process.env.DB_PASSWORD ?? '',
   database: process.env.DB_NAME ?? 'biolock',
-  synchronize: process.env.DB_SYNCHRONIZE === 'true',
+  synchronize: process.env.DB_SYNCHRONIZE === 'false',
   entities: ['src/entities/entities/*.js'],
   logging: true,
 };

@@ -1,6 +1,6 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
-import { Dispositivos } from "./Dispositivos.js";
-import { Zonas } from "./Zonas.js";
+import type { Dispositivos } from "./Dispositivos.js";
+import type { Zonas } from "./Zonas.js";
 
 @Index("dispositivos_zonas_pkey", ["dispositivoId", "zonaId"], { unique: true })
 @Index("ix_disp_zonas_zona", ["zonaId"], {})
@@ -21,15 +21,13 @@ export class DispositivosZonas {
   })
   instaladoEn: Date;
 
-  @ManyToOne(
-    () => Dispositivos,
-    (dispositivos) => dispositivos.dispositivosZonas,
-    { onDelete: "CASCADE" }
-  )
+  @ManyToOne("Dispositivos", (dispositivos: Dispositivos) => dispositivos.dispositivosZonas, {
+    onDelete: "CASCADE",
+  })
   @JoinColumn([{ name: "dispositivo_id", referencedColumnName: "id" }])
   dispositivo: Dispositivos;
 
-  @ManyToOne(() => Zonas, (zonas) => zonas.dispositivosZonas, {
+  @ManyToOne("Zonas", (zonas: Zonas) => zonas.dispositivosZonas, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "zona_id", referencedColumnName: "id" }])

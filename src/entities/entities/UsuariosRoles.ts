@@ -1,6 +1,6 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
-import { Usuarios } from "./Usuarios.js";
-import { Roles } from "./Roles.js";
+import type { Usuarios } from "./Usuarios.js";
+import type { Roles } from "./Roles.js";
 
 @Index("usuarios_roles_pkey", ["rolId", "usuarioId"], { unique: true })
 @Index("ix_usuarios_roles_rol", ["rolId"], {})
@@ -18,19 +18,19 @@ export class UsuariosRoles {
   })
   asignadoEn: Date;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.usuariosRoles, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.usuariosRoles, {
     onDelete: "SET NULL",
   })
   @JoinColumn([{ name: "asignado_por", referencedColumnName: "id" }])
   asignadoPor: Usuarios;
 
-  @ManyToOne(() => Roles, (roles) => roles.usuariosRoles, {
+  @ManyToOne("Roles", (roles: Roles) => roles.usuariosRoles, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "rol_id", referencedColumnName: "id" }])
   rol: Roles;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.usuariosRoles2, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.usuariosRoles2, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "usuario_id", referencedColumnName: "id" }])

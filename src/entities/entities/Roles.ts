@@ -5,8 +5,8 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { RolesPermisos } from "./RolesPermisos.js";
-import { UsuariosRoles } from "./UsuariosRoles.js";
+import type { RolesPermisos } from "./RolesPermisos.js";
+import type { UsuariosRoles } from "./UsuariosRoles.js";
 
 @Index("roles_pkey", ["id"], { unique: true })
 @Index("roles_nombre_key", ["nombre"], { unique: true })
@@ -30,10 +30,10 @@ export class Roles {
   })
   createdAt: Date;
 
-  @OneToMany(() => RolesPermisos, (rolesPermisos) => rolesPermisos.rol)
+  @OneToMany("RolesPermisos", (rolesPermisos: RolesPermisos) => rolesPermisos.rol)
   rolesPermisos: RolesPermisos[];
 
-  @OneToMany(() => UsuariosRoles, (usuariosRoles) => usuariosRoles.rol)
+  @OneToMany("UsuariosRoles", (usuariosRoles: UsuariosRoles) => usuariosRoles.rol)
   usuariosRoles: UsuariosRoles[];
 
   constructor(init?: Partial<Roles>) {

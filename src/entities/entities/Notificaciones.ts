@@ -6,8 +6,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Alarmas } from "./Alarmas.js";
-import { Usuarios } from "./Usuarios.js";
+import type { Alarmas } from "./Alarmas.js";
+import type { Usuarios } from "./Usuarios.js";
 
 @Index("ix_notif_alarma", ["alarmaId"], {})
 @Index("notificaciones_pkey", ["id"], { unique: true })
@@ -42,13 +42,13 @@ export class Notificaciones {
   })
   enviadaEn: Date;
 
-  @ManyToOne(() => Alarmas, (alarmas) => alarmas.notificaciones, {
+  @ManyToOne("Alarmas", (alarmas: Alarmas) => alarmas.notificaciones, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "alarma_id", referencedColumnName: "id" }])
   alarma: Alarmas;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.notificaciones, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.notificaciones, {
     onDelete: "SET NULL",
   })
   @JoinColumn([{ name: "usuario_id", referencedColumnName: "id" }])

@@ -6,10 +6,10 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Alarmas } from "./Alarmas.js";
-import { Dispositivos } from "./Dispositivos.js";
-import { Usuarios } from "./Usuarios.js";
-import { Zonas } from "./Zonas.js";
+import type { Alarmas } from "./Alarmas.js";
+import type { Dispositivos } from "./Dispositivos.js";
+import type { Usuarios } from "./Usuarios.js";
+import type { Zonas } from "./Zonas.js";
 
 @Index("ix_intentos_alarma", ["alarmaId"], {})
 @Index("ix_intentos_disp_fecha", ["dispositivoId", "timestamp"], {})
@@ -57,27 +57,27 @@ export class IntentosFallidos {
   })
   timestamp: Date;
 
-  @ManyToOne(() => Alarmas, (alarmas) => alarmas.intentosFallidos, {
+  @ManyToOne("Alarmas", (alarmas: Alarmas) => alarmas.intentosFallidos, {
     onDelete: "SET NULL",
   })
   @JoinColumn([{ name: "alarma_id", referencedColumnName: "id" }])
   alarma: Alarmas;
 
   @ManyToOne(
-    () => Dispositivos,
-    (dispositivos) => dispositivos.intentosFallidos,
+    "Dispositivos",
+    (dispositivos: Dispositivos) => dispositivos.intentosFallidos,
     { onDelete: "RESTRICT" }
   )
   @JoinColumn([{ name: "dispositivo_id", referencedColumnName: "id" }])
   dispositivo: Dispositivos;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.intentosFallidos, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.intentosFallidos, {
     onDelete: "SET NULL",
   })
   @JoinColumn([{ name: "usuario_id", referencedColumnName: "id" }])
   usuario: Usuarios;
 
-  @ManyToOne(() => Zonas, (zonas) => zonas.intentosFallidos, {
+  @ManyToOne("Zonas", (zonas: Zonas) => zonas.intentosFallidos, {
     onDelete: "RESTRICT",
   })
   @JoinColumn([{ name: "zona_id", referencedColumnName: "id" }])

@@ -6,9 +6,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Dispositivos } from "./Dispositivos.js";
-import { Usuarios } from "./Usuarios.js";
-import { Zonas } from "./Zonas.js";
+import type { Dispositivos } from "./Dispositivos.js";
+import type { Usuarios } from "./Usuarios.js";
+import type { Zonas } from "./Zonas.js";
 
 @Index("ix_accesos_dispositivo", ["dispositivoId"], {})
 @Index("accesos_pkey", ["id"], { unique: true })
@@ -46,19 +46,19 @@ export class Accesos {
   })
   timestamp: Date;
 
-  @ManyToOne(() => Dispositivos, (dispositivos) => dispositivos.accesos, {
+  @ManyToOne("Dispositivos", (dispositivos: Dispositivos) => dispositivos.accesos, {
     onDelete: "RESTRICT",
   })
   @JoinColumn([{ name: "dispositivo_id", referencedColumnName: "id" }])
   dispositivo: Dispositivos;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.accesos, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.accesos, {
     onDelete: "RESTRICT",
   })
   @JoinColumn([{ name: "usuario_id", referencedColumnName: "id" }])
   usuario: Usuarios;
 
-  @ManyToOne(() => Zonas, (zonas) => zonas.accesos, { onDelete: "RESTRICT" })
+  @ManyToOne("Zonas", (zonas: Zonas) => zonas.accesos, { onDelete: "RESTRICT" })
   @JoinColumn([{ name: "zona_id", referencedColumnName: "id" }])
   zona: Zonas;
 

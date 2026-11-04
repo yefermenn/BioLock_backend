@@ -5,12 +5,12 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Accesos } from "./Accesos.js";
-import { Alarmas } from "./Alarmas.js";
-import { DispositivosZonas } from "./DispositivosZonas.js";
-import { HorariosAcceso } from "./HorariosAcceso.js";
-import { IntentosFallidos } from "./IntentosFallidos.js";
-import { Visitantes } from "./Visitantes.js";
+import type { Accesos } from "./Accesos.js";
+import type { Alarmas } from "./Alarmas.js";
+import type { DispositivosZonas } from "./DispositivosZonas.js";
+import type { HorariosAcceso } from "./HorariosAcceso.js";
+import type { IntentosFallidos } from "./IntentosFallidos.js";
+import type { Visitantes } from "./Visitantes.js";
 
 @Index("zonas_pkey", ["id"], { unique: true })
 @Entity("zonas", { schema: "public" })
@@ -36,29 +36,16 @@ export class Zonas {
   })
   createdAt: Date;
 
-  @OneToMany(() => Accesos, (accesos) => accesos.zona)
-  accesos: Accesos[];
-
-  @OneToMany(() => Alarmas, (alarmas) => alarmas.zona)
-  alarmas: Alarmas[];
-
-  @OneToMany(
-    () => DispositivosZonas,
-    (dispositivosZonas) => dispositivosZonas.zona
-  )
+  @OneToMany("DispositivosZonas", (dispositivosZonas: DispositivosZonas) => dispositivosZonas.zona)
   dispositivosZonas: DispositivosZonas[];
 
-  @OneToMany(() => HorariosAcceso, (horariosAcceso) => horariosAcceso.zona)
+  @OneToMany("HorariosAcceso", (horariosAcceso: HorariosAcceso) => horariosAcceso.zona)
   horariosAccesos: HorariosAcceso[];
 
-  @OneToMany(
-    () => IntentosFallidos,
-    (intentosFallidos) => intentosFallidos.zona
-  )
-  intentosFallidos: IntentosFallidos[];
-
-  @OneToMany(() => Visitantes, (visitantes) => visitantes.zona)
-  visitantes: Visitantes[];
+  accesos?: Accesos[];
+  alarmas?: Alarmas[];
+  intentosFallidos?: IntentosFallidos[];
+  visitantes?: Visitantes[];
 
   constructor(init?: Partial<Zonas>) {
     Object.assign(this, init);

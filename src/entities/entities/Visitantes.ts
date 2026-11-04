@@ -6,8 +6,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Usuarios } from "./Usuarios.js";
-import { Zonas } from "./Zonas.js";
+import type { Usuarios } from "./Usuarios.js";
+import type { Zonas } from "./Zonas.js";
 
 @Index("ix_visitantes_anfitrion", ["anfitrionId"], {})
 @Index("ix_visitantes_cedula", ["cedula"], {})
@@ -56,13 +56,13 @@ export class Visitantes {
   })
   createdAt: Date;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.visitantes, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.visitantes, {
     onDelete: "RESTRICT",
   })
   @JoinColumn([{ name: "anfitrion_id", referencedColumnName: "id" }])
   anfitrion: Usuarios;
 
-  @ManyToOne(() => Zonas, (zonas) => zonas.visitantes, { onDelete: "RESTRICT" })
+  @ManyToOne("Zonas", (zonas: Zonas) => zonas.visitantes, { onDelete: "RESTRICT" })
   @JoinColumn([{ name: "zona_id", referencedColumnName: "id" }])
   zona: Zonas;
 

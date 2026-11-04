@@ -1,6 +1,6 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
-import { Permisos } from "./Permisos.js";
-import { Roles } from "./Roles.js";
+import type { Permisos } from "./Permisos.js";
+import type { Roles } from "./Roles.js";
 
 @Index("roles_permisos_pkey", ["permisoId", "rolId"], { unique: true })
 @Index("ix_roles_permisos_permiso", ["permisoId"], {})
@@ -18,13 +18,13 @@ export class RolesPermisos {
   })
   otorgadoEn: Date;
 
-  @ManyToOne(() => Permisos, (permisos) => permisos.rolesPermisos, {
+  @ManyToOne("Permisos", (permisos: Permisos) => permisos.rolesPermisos, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "permiso_id", referencedColumnName: "id" }])
   permiso: Permisos;
 
-  @ManyToOne(() => Roles, (roles) => roles.rolesPermisos, {
+  @ManyToOne("Roles", (roles: Roles) => roles.rolesPermisos, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "rol_id", referencedColumnName: "id" }])

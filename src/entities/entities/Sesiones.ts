@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Usuarios } from "./Usuarios.js";
+import type { Usuarios } from "./Usuarios.js";
 
 @Index("ix_sesiones_vigentes", ["expiraEn"], {})
 @Index("sesiones_pkey", ["id"], { unique: true })
@@ -48,7 +48,7 @@ export class Sesiones {
   @Column("timestamp with time zone", { name: "revocada_en", nullable: true })
   revocadaEn: Date | null;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.sesiones, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.sesiones, {
     onDelete: "CASCADE",
   })
   @JoinColumn([{ name: "usuario_id", referencedColumnName: "id" }])

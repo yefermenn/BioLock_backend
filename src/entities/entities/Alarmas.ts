@@ -7,11 +7,11 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Dispositivos } from "./Dispositivos.js";
-import { Usuarios } from "./Usuarios.js";
-import { Zonas } from "./Zonas.js";
-import { IntentosFallidos } from "./IntentosFallidos.js";
-import { Notificaciones } from "./Notificaciones.js";
+import type { Dispositivos } from "./Dispositivos.js";
+import type { Usuarios } from "./Usuarios.js";
+import type { Zonas } from "./Zonas.js";
+import type { IntentosFallidos } from "./IntentosFallidos.js";
+import type { Notificaciones } from "./Notificaciones.js";
 
 @Index("ix_alarmas_dispositivo", ["dispositivoId"], {})
 @Index("alarmas_pkey", ["id"], { unique: true })
@@ -51,30 +51,26 @@ export class Alarmas {
   @Column("timestamp with time zone", { name: "resuelta_en", nullable: true })
   resueltaEn: Date | null;
 
-  @ManyToOne(() => Dispositivos, (dispositivos) => dispositivos.alarmas, {
+  @ManyToOne("Dispositivos", (dispositivos: Dispositivos) => dispositivos.alarmas, {
     onDelete: "RESTRICT",
   })
   @JoinColumn([{ name: "dispositivo_id", referencedColumnName: "id" }])
   dispositivo: Dispositivos;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.alarmas, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.alarmas, {
     onDelete: "SET NULL",
   })
   @JoinColumn([{ name: "resuelta_por", referencedColumnName: "id" }])
   resueltaPor2: Usuarios;
 
-  @ManyToOne(() => Zonas, (zonas) => zonas.alarmas, { onDelete: "RESTRICT" })
+  @ManyToOne("Zonas", (zonas: Zonas) => zonas.alarmas, { onDelete: "RESTRICT" })
   @JoinColumn([{ name: "zona_id", referencedColumnName: "id" }])
   zona: Zonas;
 
-  @OneToMany(
-    () => IntentosFallidos,
-    (intentosFallidos) => intentosFallidos.alarma
-  )
+  @OneToMany("IntentosFallidos", (intentosFallidos: IntentosFallidos) => intentosFallidos.alarma)
   intentosFallidos: IntentosFallidos[];
 
-  @OneToMany(() => Notificaciones, (notificaciones) => notificaciones.alarma)
-  notificaciones: Notificaciones[];
+  notificaciones?: Notificaciones[];
 
   constructor(init?: Partial<Alarmas>) {
     Object.assign(this, init);

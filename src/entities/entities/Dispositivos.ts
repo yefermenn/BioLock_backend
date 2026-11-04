@@ -6,12 +6,12 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Accesos } from "./Accesos.js";
-import { Alarmas } from "./Alarmas.js";
-import { Configuracion } from "./Configuracion.js";
-import { DispositivosZonas } from "./DispositivosZonas.js";
-import { IntentosFallidos } from "./IntentosFallidos.js";
-import { Mantenimientos } from "./Mantenimientos.js";
+import type { Accesos } from "./Accesos.js";
+import type { Alarmas } from "./Alarmas.js";
+import type { Configuracion } from "./Configuracion.js";
+import type { DispositivosZonas } from "./DispositivosZonas.js";
+import type { IntentosFallidos } from "./IntentosFallidos.js";
+import type { Mantenimientos } from "./Mantenimientos.js";
 
 @Index("dispositivos_codigo_serie_key", ["codigoSerie"], { unique: true })
 @Index("dispositivos_pkey", ["id"], { unique: true })
@@ -44,6 +44,14 @@ export class Dispositivos {
   estado: string;
 
   @Column("character varying", {
+    name: "token_hash",
+    nullable: true,
+    length: 255,
+    select: false,
+  })
+  tokenHash: string | null;
+
+  @Column("character varying", {
     name: "version_firmware",
     nullable: true,
     length: 20,
@@ -65,32 +73,16 @@ export class Dispositivos {
   })
   createdAt: Date;
 
-  @OneToMany(() => Accesos, (accesos) => accesos.dispositivo)
-  accesos: Accesos[];
-
-  @OneToMany(() => Alarmas, (alarmas) => alarmas.dispositivo)
-  alarmas: Alarmas[];
-
-  @OneToOne(() => Configuracion, (configuracion) => configuracion.dispositivo)
+  @OneToOne("Configuracion", (configuracion: Configuracion) => configuracion.dispositivo)
   configuracion: Configuracion;
 
-  @OneToMany(
-    () => DispositivosZonas,
-    (dispositivosZonas) => dispositivosZonas.dispositivo
-  )
+  @OneToMany("DispositivosZonas", (dispositivosZonas: DispositivosZonas) => dispositivosZonas.dispositivo)
   dispositivosZonas: DispositivosZonas[];
 
-  @OneToMany(
-    () => IntentosFallidos,
-    (intentosFallidos) => intentosFallidos.dispositivo
-  )
-  intentosFallidos: IntentosFallidos[];
-
-  @OneToMany(
-    () => Mantenimientos,
-    (mantenimientos) => mantenimientos.dispositivo
-  )
-  mantenimientos: Mantenimientos[];
+  accesos?: Accesos[];
+  alarmas?: Alarmas[];
+  intentosFallidos?: IntentosFallidos[];
+  mantenimientos?: Mantenimientos[];
 
   constructor(init?: Partial<Dispositivos>) {
     Object.assign(this, init);

@@ -1,0 +1,57 @@
+@baseUrl = http://localhost:3030/api/v1
+
+### Salud
+GET {{baseUrl}}/salud
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "usuario": "admin@biolock.local",
+  "contrasena": "12345678"
+}
+
+### Refresh
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "demo_refresh_token"
+}
+
+### Me
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Usuarios
+GET {{baseUrl}}/usuarios
+Authorization: Bearer {{token}}
+
+### Roles
+GET {{baseUrl}}/roles
+Authorization: Bearer {{token}}
+
+### Zonas
+GET {{baseUrl}}/zonas
+Authorization: Bearer {{token}}
+
+### Dispositivos
+GET {{baseUrl}}/dispositivos
+Authorization: Bearer {{token}}
+
+### Accesos
+GET {{baseUrl}}/accesos
+Authorization: Bearer {{token}}
+
+### Alarmas
+GET {{baseUrl}}/alarmas
+Authorization: Bearer {{token}}
+
+### Dashboard
+GET {{baseUrl}}/dashboard/resumen
+Authorization: Bearer {{token}}
+
+### Reportes
+GET {{baseUrl}}/reportes
+Authorization: Bearer {{token}}

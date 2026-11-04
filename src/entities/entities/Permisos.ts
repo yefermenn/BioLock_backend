@@ -5,7 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { RolesPermisos } from "./RolesPermisos.js";
+import type { RolesPermisos } from "./RolesPermisos.js";
 
 @Index("permisos_codigo_key", ["codigo"], { unique: true })
 @Index("permisos_pkey", ["id"], { unique: true })
@@ -23,7 +23,7 @@ export class Permisos {
   @Column("character varying", { name: "modulo", length: 40 })
   modulo: string;
 
-  @OneToMany(() => RolesPermisos, (rolesPermisos) => rolesPermisos.permiso)
+  @OneToMany("RolesPermisos", (rolesPermisos: RolesPermisos) => rolesPermisos.permiso)
   rolesPermisos: RolesPermisos[];
 
   constructor(init?: Partial<Permisos>) {

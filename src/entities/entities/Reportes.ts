@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Usuarios } from "./Usuarios.js";
+import type { Usuarios } from "./Usuarios.js";
 
 @Index("reportes_pkey", ["id"], { unique: true })
 @Index("ix_reportes_usuario", ["usuarioId"], {})
@@ -47,7 +47,7 @@ export class Reportes {
   })
   estado: string;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.reportes, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.reportes, {
     onDelete: "RESTRICT",
   })
   @JoinColumn([{ name: "usuario_id", referencedColumnName: "id" }])

@@ -6,8 +6,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Dispositivos } from "./Dispositivos.js";
-import { Usuarios } from "./Usuarios.js";
+import type { Dispositivos } from "./Dispositivos.js";
+import type { Usuarios } from "./Usuarios.js";
 
 @Index("ix_mant_dispositivo", ["dispositivoId"], {})
 @Index("mantenimientos_pkey", ["id"], { unique: true })
@@ -58,14 +58,14 @@ export class Mantenimientos {
   createdAt: Date;
 
   @ManyToOne(
-    () => Dispositivos,
-    (dispositivos) => dispositivos.mantenimientos,
+    "Dispositivos",
+    (dispositivos: Dispositivos) => dispositivos.mantenimientos,
     { onDelete: "RESTRICT" }
   )
   @JoinColumn([{ name: "dispositivo_id", referencedColumnName: "id" }])
   dispositivo: Dispositivos;
 
-  @ManyToOne(() => Usuarios, (usuarios) => usuarios.mantenimientos, {
+  @ManyToOne("Usuarios", (usuarios: Usuarios) => usuarios.mantenimientos, {
     onDelete: "SET NULL",
   })
   @JoinColumn([{ name: "tecnico_id", referencedColumnName: "id" }])

@@ -15,8 +15,10 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return the health payload', () => {
+      const response = appController.getHealth();
+      expect(response.ok).toBe(true);
+      expect(response.servicio).toBe('BioLock backend');
     });
   });
 });
