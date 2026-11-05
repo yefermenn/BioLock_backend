@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { createHash } from 'node:crypto';
@@ -61,6 +62,23 @@ export class EventosService {
     });
 
     const usuarioId = await this.resolverUsuarioId(tipo, body.usuario_id ?? body.usuarioId, body.nombre);
+
+    if ((tipo === 'permitido' || tipo === 'remoto') && !usuarioId) {
+      if (tipo === 'remoto') {
+        throw new UnprocessableEntityException({
+          error: 'usuario_requerido',
+          mensaje: 'Los eventos remotos requieren usuario_id válido; la API no puede inferir el usuario sin la orden asociada.',
+        });
+      }
+
+      const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : '';
+      throw new UnprocessableEntityException({
+        error: 'usuario_no_encontrado',
+        mensaje: nombre
+          ? `No existe un usuario con el nombre "${nombre}" para un acceso permitido.`
+          : 'Falta usuario_id o nombre válido para registrar un acceso permitido.',
+      });
+    }
 
     switch (tipo) {
       case 'permitido': {

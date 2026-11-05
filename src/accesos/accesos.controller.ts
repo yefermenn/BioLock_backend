@@ -8,7 +8,17 @@ export class AccesosController {
 
   @Get()
   @Permisos('ver_accesos')
-  list(@Query('pagina') pagina?: string) {
-    return this.accesosService.list();
+  list(
+    @Query('pagina') pagina?: string,
+    @Query('limite') limite?: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
+    return this.accesosService.list({
+      pagina: pagina ? Number(pagina) : 1,
+      limite: limite ? Number(limite) : 20,
+      desde,
+      hasta,
+    });
   }
 }

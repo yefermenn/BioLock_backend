@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Accesos } from '../entities/entities/Accesos.js';
+
+type AccesosListQuery = {
+  pagina?: number;
+  limite?: number;
+  desde?: string;
+  hasta?: string;
+};
 
 @Injectable()
 export class AccesosService {
@@ -10,11 +17,37 @@ export class AccesosService {
     private readonly accesosRepository: Repository<Accesos>,
   ) {}
 
-  async list() {
+  async list(query: AccesosListQuery = {}) {
+    const pagina = Number.isFinite(query.pagina) && Number(query.pagina) > 0 ? Number(query.pagina) : 1;
+    const limite = Number.isFinite(query.limite) && Number(query.limite) > 0 ? Number(query.limite) : 20;
+    const skip = (pagina - 1) * limite;
+
+    const where: Record<string, unknown> = {};
+
+    if (query.desde && query.hasta) {
+      const inicio = new Date(query.desde);
+      const fin = new Date(query.hasta);
+      if (!Number.isNaN(inicio.getTime()) && !Number.isNaN(fin.getTime())) {
+        where.timestamp = Between(inicio, fin);
+      }
+    } else if (query.desde) {
+      const inicio = new Date(query.desde);
+      if (!Number.isNaN(inicio.getTime())) {
+        where.timestamp = MoreThanOrEqual(inicio);
+      }
+    } else if (query.hasta) {
+      const fin = new Date(query.hasta);
+      if (!Number.isNaN(fin.getTime())) {
+        where.timestamp = LessThanOrEqual(fin);
+      }
+    }
+
     const [items, total] = await this.accesosRepository.findAndCount({
+      where,
       order: { timestamp: 'DESC' },
       relations: { usuario: true, dispositivo: true, zona: true },
-      take: 20,
+      skip,
+      take: limite,
     });
 
     return {
@@ -30,8 +63,8 @@ export class AccesosService {
         score_biometrico: acceso.scoreBiometrico ? Number(acceso.scoreBiometrico) : null,
       })),
       total,
-      pagina: 1,
-      limite: 20,
+      pagina,
+      limite,
     };
   }
 }
