@@ -29,9 +29,22 @@ export class PermisosGuard implements CanActivate {
     }
 
     const permisosUsuario = new Set(user.permisos ?? []);
-    const tieneTodos = requiredPermissions.every((permiso) =>
-      permisosUsuario.has(permiso),
-    );
+    const aliasPermisos: Record<string, string[]> = {
+      ver_roles: ['ver_roles', 'gestionar_roles'],
+      gestionar_roles: ['gestionar_roles', 'ver_roles'],
+      regenerar_token_dispositivo: ['regenerar_token_dispositivo', 'gestionar_dispositivos'],
+      gestionar_dispositivos: ['gestionar_dispositivos', 'regenerar_token_dispositivo'],
+    };
+
+    const tienePermiso = (permiso: string) => {
+      if (permisosUsuario.has(permiso)) {
+        return true;
+      }
+
+      return (aliasPermisos[permiso] ?? []).some((alias) => permisosUsuario.has(alias));
+    };
+
+    const tieneTodos = requiredPermissions.every((permiso) => tienePermiso(permiso));
 
     if (!tieneTodos) {
       throw new ForbiddenException({

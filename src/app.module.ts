@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -15,6 +15,7 @@ import { AlarmasModule } from './alarmas/alarmas.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { ReportesModule } from './reportes/reportes.module.js';
 import { AuditoriaModule } from './auditoria/auditoria.module.js';
+import { AuditoriaInterceptor } from './auditoria/auditoria.interceptor.js';
 import { EventosModule } from './eventos/eventos.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermisosGuard } from './common/guards/permisos.guard.js';
@@ -59,6 +60,10 @@ import { PermisosGuard } from './common/guards/permisos.guard.js';
     {
       provide: APP_GUARD,
       useClass: PermisosGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditoriaInterceptor,
     },
   ],
 })

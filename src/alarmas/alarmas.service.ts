@@ -10,10 +10,28 @@ export class AlarmasService {
     private readonly alarmasRepository: Repository<Alarmas>,
   ) {}
 
+  private mapResueltaPor(alarma: Partial<{ resueltaPor: number | null; resueltaPor2?: { id: number; nombre: string } }>) {
+    if (alarma.resueltaPor === null || alarma.resueltaPor === undefined) {
+      return null;
+    }
+
+    if (alarma.resueltaPor2) {
+      return {
+        id: alarma.resueltaPor2.id,
+        nombre: alarma.resueltaPor2.nombre,
+      };
+    }
+
+    return {
+      id: alarma.resueltaPor,
+      nombre: null,
+    };
+  }
+
   async list() {
     const [items, total] = await this.alarmasRepository.findAndCount({
       order: { timestamp: 'DESC' },
-      relations: { zona: true, dispositivo: true },
+      relations: { zona: true, dispositivo: true, resueltaPor2: true },
       take: 20,
     });
 
@@ -22,6 +40,11 @@ export class AlarmasService {
         id: alarma.id,
         estado: alarma.estado,
         fecha: alarma.timestamp,
+        observaciones: alarma.observaciones,
+        observaciones_resolucion: alarma.observacionesResolucion,
+        resuelta_por: this.mapResueltaPor(alarma),
+        resuelta_en: alarma.resueltaEn,
+        fecha_resolucion: alarma.resueltaEn,
         zona: alarma.zona ? { id: alarma.zona.id, nombre: alarma.zona.nombre } : null,
         dispositivo: alarma.dispositivo ? { id: alarma.dispositivo.id, nombre: alarma.dispositivo.nombre } : null,
       })),
@@ -34,7 +57,7 @@ export class AlarmasService {
   async findById(id: number) {
     const alarma = await this.alarmasRepository.findOne({
       where: { id },
-      relations: { zona: true, dispositivo: true, intentosFallidos: true },
+      relations: { zona: true, dispositivo: true, intentosFallidos: true, resueltaPor2: true },
     });
 
     if (!alarma) {
@@ -45,14 +68,24 @@ export class AlarmasService {
       id: alarma.id,
       estado: alarma.estado,
       observaciones: alarma.observaciones,
+      observaciones_resolucion: alarma.observacionesResolucion,
+      nota_resolucion: alarma.observacionesResolucion,
+      resuelta_por: this.mapResueltaPor(alarma),
+      resuelta_en: alarma.resueltaEn,
+      fecha_resolucion: alarma.resueltaEn,
       fecha: alarma.timestamp,
       zona: alarma.zona ? { id: alarma.zona.id, nombre: alarma.zona.nombre } : null,
       dispositivo: alarma.dispositivo ? { id: alarma.dispositivo.id, nombre: alarma.dispositivo.nombre } : null,
-      intentos_fallidos: alarma.intentosFallidos ?? [],
+      intentos_fallidos: (alarma.intentosFallidos ?? []).map((item) => ({
+        id: item.id,
+        dispositivo_id: item.dispositivoId,
+        score_obtenido: item.scoreObtenido,
+        timestamp: item.timestamp,
+      })),
     };
   }
 
-  async resolver(id: number, dto: Record<string, unknown>) {
+  async resolver(id: number, dto: Record<string, unknown>, usuarioActual?: { id?: number; nombre?: string } | null) {
     const alarma = await this.alarmasRepository.findOne({ where: { id } });
     if (!alarma) {
       return null;
@@ -62,13 +95,33 @@ export class AlarmasService {
       return { ok: false, error: 'conflicto', mensaje: 'La alarma ya fue resuelta.' };
     }
 
+    const fechaResolucion = new Date();
+    const nota =
+      dto.observaciones_resolucion !== undefined
+        ? String(dto.observaciones_resolucion)
+        : dto.nota !== undefined
+          ? String(dto.nota)
+          : dto.observaciones !== undefined
+            ? String(dto.observaciones)
+            : alarma.observacionesResolucion ?? alarma.observaciones;
+    const usuarioId = usuarioActual?.id ?? (dto.resuelta_por !== undefined ? Number(dto.resuelta_por) : null);
+
     alarma.estado = String(dto.estado ?? 'resuelta');
-    alarma.observaciones = dto.observaciones !== undefined ? String(dto.observaciones) : alarma.observaciones;
-    alarma.resueltaEn = new Date();
-    alarma.resueltaPor = dto.resuelta_por !== undefined ? Number(dto.resuelta_por) : alarma.resueltaPor;
+    alarma.observacionesResolucion = nota ?? null;
+    alarma.resueltaEn = fechaResolucion;
+    alarma.resueltaPor = usuarioId !== null && Number.isFinite(usuarioId) ? Number(usuarioId) : alarma.resueltaPor;
     await this.alarmasRepository.save(alarma);
 
-    return { ok: true, id, estado: alarma.estado };
+    return {
+      ok: true,
+      id,
+      estado: alarma.estado,
+      resuelta_por: alarma.resueltaPor,
+      resuelta_en: alarma.resueltaEn,
+      observaciones_resolucion: alarma.observacionesResolucion,
+      nota_resolucion: alarma.observacionesResolucion,
+      fecha_resolucion: alarma.resueltaEn,
+    };
   }
 
   async conteo() {

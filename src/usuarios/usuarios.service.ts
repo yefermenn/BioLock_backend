@@ -16,8 +16,8 @@ export class UsuariosService {
 
   private mapUsuario(usuario: Usuarios) {
     const roles = usuario.usuariosRoles2
-      ?.map((rel) => rel.rol?.nombre)
-      .filter((nombre): nombre is string => Boolean(nombre)) ?? [];
+      ?.map((rel) => (rel.rol ? { id: rel.rol.id, nombre: rel.rol.nombre } : null))
+      .filter((rol): rol is { id: number; nombre: string } => Boolean(rol)) ?? [];
 
     return {
       id: usuario.id,
@@ -34,7 +34,7 @@ export class UsuariosService {
       activo: usuario.activo,
       biometria_registrada: usuario.biometriaRegistrada,
       fecha_registro_biometrico: usuario.fechaRegistroBiometrico,
-      roles: roles.map((nombre) => ({ id: 0, nombre })),
+      roles: roles.map((rol) => ({ id: rol.id, nombre: rol.nombre })),
       created_at: usuario.createdAt,
       updated_at: usuario.updatedAt,
     };
@@ -53,6 +53,35 @@ export class UsuariosService {
       pagina: 1,
       limite: 20,
     };
+  }
+
+  async asignarRol(usuarioId: number, rolId: number) {
+    const existe = await this.usuariosRolesRepository.findOne({
+      where: { usuarioId, rolId },
+    });
+
+    if (!existe) {
+      await this.usuariosRolesRepository.save({ usuarioId, rolId, activo: true });
+    }
+
+    return { ok: true, usuario_id: usuarioId, rol_id: rolId };
+  }
+
+  async quitarRol(usuarioId: number, rolId: number) {
+    await this.usuariosRolesRepository.delete({ usuarioId, rolId });
+    return { ok: true, usuario_id: usuarioId, rol_id: rolId };
+  }
+
+  async restablecerPassword(id: number, nuevaPassword: string) {
+    const usuario = await this.usuariosRepository.findOne({ where: { id } });
+    if (!usuario) {
+      return null;
+    }
+
+    usuario.passwordHash = await bcrypt.hash(nuevaPassword, Number(process.env.BCRYPT_ROUNDS ?? 10));
+    await this.usuariosRepository.save(usuario);
+
+    return { ok: true, id, mensaje: 'Contraseña restablecida.' };
   }
 
   async findById(id: number) {

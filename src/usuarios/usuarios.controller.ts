@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -10,6 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { Permisos } from '../common/permissions.decorator.js';
+import { UsuarioActual } from '../common/user.decorator.js';
 import { UsuariosService } from './usuarios.service.js';
 
 @Controller('usuarios')
@@ -52,9 +54,38 @@ export class UsuariosController {
     return this.usuariosService.cambiarEstado(id, body.activo);
   }
 
-  @Delete(':id/roles/:rolId')
+  @Post(':id/roles')
   @Permisos('gestionar_roles')
-  quitarRol(@Param('id', ParseIntPipe) id: number, @Param('rolId', ParseIntPipe) rolId: number) {
-    return { ok: true, idUsuario: id, idRol: rolId };
+  asignarRol(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { rol_id?: number },
+  ) {
+    return this.usuariosService.asignarRol(id, Number(dto.rol_id));
+  }
+
+  @Delete(':id/roles/:rol_id')
+  @Permisos('gestionar_roles')
+  quitarRol(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('rol_id', ParseIntPipe) rolId: number,
+  ) {
+    return this.usuariosService.quitarRol(id, rolId);
+  }
+
+  @Patch(':id/password')
+  @Permisos('gestionar_usuarios')
+  restablecerPassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { password?: string },
+    @UsuarioActual() user: any,
+  ) {
+    if (!user?.roles?.includes('superadmin')) {
+      throw new ForbiddenException({
+        error: 'sin_permiso',
+        mensaje: 'Solo el superadmin puede restablecer la contraseña de otro usuario.',
+      });
+    }
+
+    return this.usuariosService.restablecerPassword(id, String(dto.password ?? ''));
   }
 }

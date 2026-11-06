@@ -29,6 +29,26 @@ export class DashboardService {
       `SELECT id, nombre, ultima_conexion, activo, estado, now() - ultima_conexion < interval '2 minutes' AS en_linea
        FROM public.dispositivos ORDER BY id ASC`,
     );
+    const ultimosEventos = await this.dataSource.query(
+      `SELECT fecha, tipo, descripcion
+       FROM (
+         SELECT timestamp AS fecha, 'acceso' AS tipo, COALESCE(u.nombre, 'Sistema') || ' entró al sitio' AS descripcion
+         FROM public.accesos a
+         LEFT JOIN public.usuarios u ON u.id = a.usuario_id
+         ORDER BY a.timestamp DESC
+         LIMIT 5
+       ) q
+       UNION ALL
+       SELECT fecha, tipo, descripcion
+       FROM (
+         SELECT timestamp AS fecha, 'intento_fallido' AS tipo, 'Intento fallido en dispositivo' AS descripcion
+         FROM public.intentos_fallidos
+         ORDER BY timestamp DESC
+         LIMIT 5
+       ) q2
+       ORDER BY fecha DESC
+       LIMIT 10`,
+    );
 
     return {
       fecha: new Date().toISOString().slice(0, 10),
@@ -45,21 +65,30 @@ export class DashboardService {
         ultima_conexion: item.ultima_conexion,
       })),
       accesos_por_hora: [],
-      ultimos_eventos: [],
+      ultimos_eventos: (ultimosEventos as any[]).map((item: any) => ({
+        fecha: item.fecha,
+        tipo: item.tipo,
+        descripcion: item.descripcion,
+      })),
     };
   }
 
   async tendencia(dias = 7) {
     const rows = await this.dataSource.query(
-      `SELECT
-         to_char(timestamp AT TIME ZONE 'America/Bogota', 'YYYY-MM-DD') AS fecha,
-         COUNT(*) FILTER (WHERE tipo_acceso IS NOT NULL) AS accesos,
-         COUNT(*) FILTER (WHERE 1=0) AS intentos_fallidos,
-         COUNT(*) FILTER (WHERE 1=0) AS alarmas
-       FROM public.accesos
-       WHERE timestamp >= now() - ($1 || ' days')::interval
-       GROUP BY 1
-       ORDER BY 1 DESC`,
+      `WITH rango AS (
+         SELECT generate_series(
+           date_trunc('day', now() - ($1 || ' days')::interval),
+           date_trunc('day', now()),
+           interval '1 day'
+         )::date AS fecha
+       )
+       SELECT
+         to_char(r.fecha AT TIME ZONE 'America/Bogota', 'YYYY-MM-DD') AS fecha,
+         COALESCE((SELECT COUNT(*)::int FROM public.accesos a WHERE a.timestamp::date = r.fecha), 0) AS accesos,
+         COALESCE((SELECT COUNT(*)::int FROM public.intentos_fallidos i WHERE i.timestamp::date = r.fecha), 0) AS intentos_fallidos,
+         COALESCE((SELECT COUNT(*)::int FROM public.alarmas al WHERE al.timestamp::date = r.fecha), 0) AS alarmas
+       FROM rango r
+       ORDER BY r.fecha DESC`,
       [Number(dias)],
     );
 

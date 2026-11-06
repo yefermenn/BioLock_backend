@@ -15,6 +15,12 @@ import { RolesService } from './roles.service.js';
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
+  @Get('permisos')
+  @Permisos('ver_roles')
+  listPermisos() {
+    return this.rolesService.listPermisos();
+  }
+
   @Get()
   @Permisos('ver_roles')
   list() {
@@ -48,6 +54,17 @@ export class RolesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: { permisos: number[] },
   ) {
-    return { ok: true, id, permisos: dto.permisos };
+    return this.rolesService.reemplazarPermisos(id, dto.permisos ?? []);
+  }
+}
+
+@Controller('permisos')
+export class PermisosController {
+  constructor(private readonly rolesService: RolesService) {}
+
+  @Get()
+  @Permisos('ver_roles')
+  list() {
+    return this.rolesService.listPermisos();
   }
 }

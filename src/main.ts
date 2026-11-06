@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
@@ -21,6 +21,17 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => {
+        const message = errors
+          .map((error) => Object.values(error.constraints ?? {}))
+          .flat()
+          .join('; ');
+
+        return new BadRequestException({
+          error: 'validacion',
+          mensaje: message || 'Los datos enviados no son válidos.',
+        });
+      },
     }),
   );
   app.getHttpAdapter().getInstance().set('trust proxy', true);

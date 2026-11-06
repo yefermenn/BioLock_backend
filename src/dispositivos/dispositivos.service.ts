@@ -120,4 +120,57 @@ export class DispositivosService {
     await this.dispositivosRepository.update(id, { tokenHash: hash });
     return { ok: true, token };
   }
+
+  async actualizarBiometriaPorToken(authorization: string | undefined, usuarioIds: number[]) {
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      return { ok: false, error: 'no_autenticado', mensaje: 'Falta el token del dispositivo.' };
+    }
+
+    const token = authorization.replace('Bearer ', '').trim();
+    const hash = createHash('sha256').update(token).digest('hex');
+    const dispositivo = await this.dispositivosRepository.findOne({
+      where: { tokenHash: hash },
+    });
+
+    if (!dispositivo) {
+      return { ok: false, error: 'no_autenticado', mensaje: 'El token del dispositivo no es válido.' };
+    }
+
+    const ids = [...new Set(usuarioIds.filter((id) => Number.isInteger(id) && id > 0))];
+    const ahora = new Date();
+
+    if (ids.length > 0) {
+      await this.dispositivosRepository.manager.query(
+        `UPDATE public.usuarios
+         SET biometria_registrada = TRUE,
+             fecha_registro_biometrico = $1
+         WHERE id = ANY($2)`,
+        [ahora, ids],
+      );
+
+      await this.dispositivosRepository.manager.query(
+        `UPDATE public.usuarios
+         SET biometria_registrada = FALSE,
+             fecha_registro_biometrico = NULL
+         WHERE activo = TRUE
+           AND biometria_registrada = TRUE
+           AND id <> ALL($1)`,
+        [ids],
+      );
+    } else {
+      await this.dispositivosRepository.manager.query(
+        `UPDATE public.usuarios
+         SET biometria_registrada = FALSE,
+             fecha_registro_biometrico = NULL
+         WHERE activo = TRUE AND biometria_registrada = TRUE`,
+      );
+    }
+
+    return {
+      ok: true,
+      dispositivo_id: dispositivo.id,
+      usuario_ids: ids,
+      actualizado_en: ahora.toISOString(),
+    };
+  }
 }

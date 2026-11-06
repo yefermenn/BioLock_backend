@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Req } from '@nestjs/common';
 import { Permisos } from '../common/permissions.decorator.js';
 import { AlarmasService } from './alarmas.service.js';
 
@@ -22,9 +22,10 @@ export class AlarmasController {
   @Permisos('resolver_alarmas')
   resolver(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: { estado: 'resuelta' | 'falsa_alarma'; observaciones: string },
+    @Body() dto: { estado?: 'resuelta' | 'falsa_alarma'; observaciones?: string; observaciones_resolucion?: string; nota?: string; resuelta_por?: number },
+    @Req() req: any,
   ) {
-    return this.service.resolver(id, dto);
+    return this.service.resolver(id, dto, req?.user ?? null);
   }
 
   @Get('activas/conteo')

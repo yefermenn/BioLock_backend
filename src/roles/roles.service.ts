@@ -54,6 +54,19 @@ export class RolesService {
     };
   }
 
+  async listPermisos() {
+    const permisos = await this.permisosRepository.find({ order: { modulo: 'ASC', codigo: 'ASC' } });
+    return {
+      items: permisos.map((permiso) => ({
+        id: permiso.id,
+        codigo: permiso.codigo,
+        descripcion: permiso.descripcion,
+        modulo: permiso.modulo,
+      })),
+      total: permisos.length,
+    };
+  }
+
   async create(dto: Record<string, unknown>) {
     const rol = this.rolesRepository.create({
       nombre: String(dto.nombre ?? ''),

@@ -47,6 +47,13 @@ export class EventosService {
     const dispositivoId = Number(dispositivo.id);
     const zonaId = Number(dispositivo.zona_id ?? dispositivo.zonaId ?? 0);
 
+    await this.dataSource.query(
+      `UPDATE public.dispositivos
+       SET ultima_conexion = $1, estado = 'online'
+       WHERE id = $2`,
+      [new Date(), dispositivoId],
+    );
+
     if (!Number.isFinite(dispositivoId) || dispositivoId <= 0 || !Number.isFinite(zonaId) || zonaId <= 0) {
       throw new UnauthorizedException({
         error: 'dispositivo_invalido',

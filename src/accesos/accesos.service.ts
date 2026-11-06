@@ -8,6 +8,10 @@ type AccesosListQuery = {
   limite?: number;
   desde?: string;
   hasta?: string;
+  usuario_id?: number;
+  zona_id?: number;
+  dispositivo_id?: number;
+  tipo_acceso?: string;
 };
 
 @Injectable()
@@ -23,6 +27,19 @@ export class AccesosService {
     const skip = (pagina - 1) * limite;
 
     const where: Record<string, unknown> = {};
+
+    if (query.usuario_id !== undefined && Number(query.usuario_id) > 0) {
+      where.usuarioId = Number(query.usuario_id);
+    }
+    if (query.zona_id !== undefined && Number(query.zona_id) > 0) {
+      where.zonaId = Number(query.zona_id);
+    }
+    if (query.dispositivo_id !== undefined && Number(query.dispositivo_id) > 0) {
+      where.dispositivoId = Number(query.dispositivo_id);
+    }
+    if (query.tipo_acceso) {
+      where.tipoAcceso = String(query.tipo_acceso);
+    }
 
     if (query.desde && query.hasta) {
       const inicio = new Date(query.desde);

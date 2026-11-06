@@ -1,10 +1,19 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, ParseIntPipe, Patch, Post, Put } from '@nestjs/common';
 import { Permisos } from '../common/permissions.decorator.js';
 import { DispositivosService } from './dispositivos.service.js';
 
 @Controller('dispositivos')
 export class DispositivosController {
   constructor(private readonly dispositivosService: DispositivosService) {}
+
+  @Post('biometria')
+  @Permisos('gestionar_dispositivos')
+  registrarBiometria(
+    @Headers('authorization') authorization: string,
+    @Body() dto: { usuario_ids?: number[] },
+  ) {
+    return this.dispositivosService.actualizarBiometriaPorToken(authorization, dto.usuario_ids ?? []);
+  }
 
   @Get()
   @Permisos('ver_dispositivos')
@@ -43,7 +52,7 @@ export class DispositivosController {
   }
 
   @Post(':id/token')
-  @Permisos('gestionar_dispositivos')
+  @Permisos('regenerar_token_dispositivo')
   regenerarToken(@Param('id', ParseIntPipe) id: number) {
     return { ok: true, id, token: 'demo-token-0123456789' };
   }
