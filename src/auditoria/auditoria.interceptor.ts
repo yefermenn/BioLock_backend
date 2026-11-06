@@ -78,6 +78,15 @@ export class AuditoriaInterceptor implements NestInterceptor {
         }
 
         const usuario = request.user ?? null;
+        const forwardedFor = request.headers?.['x-forwarded-for'];
+        const realIp = request.headers?.['x-real-ip'];
+        const ip = Array.isArray(forwardedFor)
+          ? forwardedFor[0]
+          : typeof forwardedFor === 'string'
+            ? forwardedFor.split(',')[0].trim()
+            : typeof realIp === 'string'
+              ? realIp
+              : request.ip ?? '127.0.0.1';
         const body = request.body ?? {};
         const detalle = sanitizarValor({
           ruta: route,
@@ -90,7 +99,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
           accion: method,
           tablaAfectada: route.replace(/^\//, ''),
           registroId: body?.id ?? body?.usuario_id ?? request.params?.id ?? null,
-          ip: request.ip,
+          ip,
           detalle,
         });
       }),

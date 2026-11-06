@@ -8,23 +8,20 @@ export class AuditoriaController {
 
   @Get()
   @Permisos('ver_auditoria')
-  list(
+  async list(
     @Query('usuario_id') usuarioId?: string,
     @Query('accion') accion?: string,
     @Query('tabla') tabla?: string,
   ) {
+    const { items, total } = await this.auditoriaService.list({
+      usuarioId: usuarioId ? Number(usuarioId) : undefined,
+      accion,
+      tabla,
+    });
+
     return {
-      items: [{
-        id: 1,
-        fecha: new Date().toISOString(),
-        usuario: { id: 1, nombre: 'Kevin Delgado' },
-        accion: accion ?? 'LOGIN',
-        tabla_afectada: tabla ?? 'sesiones',
-        registro_id: 1,
-        ip_origen: '127.0.0.1',
-        detalle: { ok: true },
-      }],
-      total: 1,
+      items,
+      total,
       pagina: 1,
       limite: 20,
     };

@@ -91,7 +91,7 @@ export class DashboardService {
     const rows = await this.dataSource.query(
       `WITH rango AS (
          SELECT generate_series(
-           ((now() AT TIME ZONE 'America/Bogota')::date - ($1 || ' days')::integer)::timestamp,
+           ((now() AT TIME ZONE 'America/Bogota')::date - ($1)::integer)::timestamp,
            (now() AT TIME ZONE 'America/Bogota')::date,
            interval '1 day'
          )::date AS fecha
@@ -102,7 +102,7 @@ export class DashboardService {
          COALESCE((SELECT COUNT(*)::int FROM public.intentos_fallidos i WHERE (i.timestamp AT TIME ZONE 'America/Bogota')::date = r.fecha), 0) AS intentos_fallidos,
          COALESCE((SELECT COUNT(*)::int FROM public.alarmas al WHERE (al.timestamp AT TIME ZONE 'America/Bogota')::date = r.fecha), 0) AS alarmas
        FROM rango r
-       ORDER BY r.fecha DESC`,
+       ORDER BY r.fecha ASC`,
       [Number(dias)],
     );
 
