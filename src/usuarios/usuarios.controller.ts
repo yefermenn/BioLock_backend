@@ -59,8 +59,9 @@ export class UsuariosController {
   asignarRol(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: { rol_id?: number },
+    @UsuarioActual() user: any,
   ) {
-    return this.usuariosService.asignarRol(id, Number(dto.rol_id));
+    return this.usuariosService.asignarRol(id, Number(dto.rol_id), user?.id ?? null);
   }
 
   @Delete(':id/roles/:rol_id')
@@ -68,8 +69,9 @@ export class UsuariosController {
   quitarRol(
     @Param('id', ParseIntPipe) id: number,
     @Param('rol_id', ParseIntPipe) rolId: number,
+    @UsuarioActual() user: any,
   ) {
-    return this.usuariosService.quitarRol(id, rolId);
+    return this.usuariosService.quitarRol(id, rolId, user?.id ?? null);
   }
 
   @Patch(':id/password')

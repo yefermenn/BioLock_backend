@@ -2,12 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { AlarmasService } from './alarmas.service.js';
 
 describe('AlarmasService', () => {
-  it('guarda la nota de resolución en observaciones_resolucion sin tocar observaciones', async () => {
+  it('no intenta guardar una nota de resolución en una columna inexistente y conserva observaciones', async () => {
     const alarma = {
       id: 1,
       estado: 'activa',
       observaciones: 'Reporte original',
-      observacionesResolucion: null,
       resueltaPor: null,
       resueltaEn: null,
       timestamp: new Date(),
@@ -28,14 +27,15 @@ describe('AlarmasService', () => {
     );
 
     expect(alarma.observaciones).toBe('Reporte original');
-    expect(alarma.observacionesResolucion).toBe('Se resolvió por revisión del equipo.');
+    expect('observacionesResolucion' in alarma).toBe(false);
     expect(alarma.resueltaPor).toBe(42);
     expect(alarma.resueltaEn).toBeInstanceOf(Date);
     expect(save).toHaveBeenCalled();
     expect(resultado).toMatchObject({
       ok: true,
       resuelta_por: 42,
-      observaciones_resolucion: 'Se resolvió por revisión del equipo.',
+      observaciones_resolucion: null,
+      nota_resolucion: null,
     });
   });
 });

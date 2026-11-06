@@ -41,7 +41,7 @@ export class AlarmasService {
         estado: alarma.estado,
         fecha: alarma.timestamp,
         observaciones: alarma.observaciones,
-        observaciones_resolucion: alarma.observacionesResolucion,
+        observaciones_resolucion: null,
         resuelta_por: this.mapResueltaPor(alarma),
         resuelta_en: alarma.resueltaEn,
         fecha_resolucion: alarma.resueltaEn,
@@ -68,8 +68,8 @@ export class AlarmasService {
       id: alarma.id,
       estado: alarma.estado,
       observaciones: alarma.observaciones,
-      observaciones_resolucion: alarma.observacionesResolucion,
-      nota_resolucion: alarma.observacionesResolucion,
+      observaciones_resolucion: null,
+      nota_resolucion: null,
       resuelta_por: this.mapResueltaPor(alarma),
       resuelta_en: alarma.resueltaEn,
       fecha_resolucion: alarma.resueltaEn,
@@ -96,18 +96,9 @@ export class AlarmasService {
     }
 
     const fechaResolucion = new Date();
-    const nota =
-      dto.observaciones_resolucion !== undefined
-        ? String(dto.observaciones_resolucion)
-        : dto.nota !== undefined
-          ? String(dto.nota)
-          : dto.observaciones !== undefined
-            ? String(dto.observaciones)
-            : alarma.observacionesResolucion ?? alarma.observaciones;
     const usuarioId = usuarioActual?.id ?? (dto.resuelta_por !== undefined ? Number(dto.resuelta_por) : null);
 
     alarma.estado = String(dto.estado ?? 'resuelta');
-    alarma.observacionesResolucion = nota ?? null;
     alarma.resueltaEn = fechaResolucion;
     alarma.resueltaPor = usuarioId !== null && Number.isFinite(usuarioId) ? Number(usuarioId) : alarma.resueltaPor;
     await this.alarmasRepository.save(alarma);
@@ -118,8 +109,8 @@ export class AlarmasService {
       estado: alarma.estado,
       resuelta_por: alarma.resueltaPor,
       resuelta_en: alarma.resueltaEn,
-      observaciones_resolucion: alarma.observacionesResolucion,
-      nota_resolucion: alarma.observacionesResolucion,
+      observaciones_resolucion: null,
+      nota_resolucion: null,
       fecha_resolucion: alarma.resueltaEn,
     };
   }

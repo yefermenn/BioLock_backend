@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { Usuarios } from '../entities/entities/Usuarios.js';
 import { UsuariosRoles } from '../entities/entities/UsuariosRoles.js';
+import { AuditoriaService } from '../auditoria/auditoria.service.js';
 
 @Injectable()
 export class UsuariosService {
@@ -12,6 +13,7 @@ export class UsuariosService {
     private readonly usuariosRepository: Repository<Usuarios>,
     @InjectRepository(UsuariosRoles)
     private readonly usuariosRolesRepository: Repository<UsuariosRoles>,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   private mapUsuario(usuario: Usuarios) {
@@ -55,7 +57,7 @@ export class UsuariosService {
     };
   }
 
-  async asignarRol(usuarioId: number, rolId: number) {
+  async asignarRol(usuarioId: number, rolId: number, actorId?: number) {
     const existe = await this.usuariosRolesRepository.findOne({
       where: { usuarioId, rolId },
     });
@@ -64,11 +66,26 @@ export class UsuariosService {
       await this.usuariosRolesRepository.save({ usuarioId, rolId, activo: true });
     }
 
+    await this.auditoriaService.registrar({
+      usuarioId: actorId ?? null,
+      accion: 'ASIGNAR_ROL',
+      tablaAfectada: 'usuarios_roles',
+      registroId: `${usuarioId}:${rolId}`,
+      detalle: { usuario_id: usuarioId, rol_id: rolId, accion: 'asignar' },
+    });
+
     return { ok: true, usuario_id: usuarioId, rol_id: rolId };
   }
 
-  async quitarRol(usuarioId: number, rolId: number) {
+  async quitarRol(usuarioId: number, rolId: number, actorId?: number) {
     await this.usuariosRolesRepository.delete({ usuarioId, rolId });
+    await this.auditoriaService.registrar({
+      usuarioId: actorId ?? null,
+      accion: 'QUITAR_ROL',
+      tablaAfectada: 'usuarios_roles',
+      registroId: `${usuarioId}:${rolId}`,
+      detalle: { usuario_id: usuarioId, rol_id: rolId, accion: 'quitar' },
+    });
     return { ok: true, usuario_id: usuarioId, rol_id: rolId };
   }
 

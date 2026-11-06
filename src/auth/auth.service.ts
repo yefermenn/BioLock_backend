@@ -14,6 +14,7 @@ import { RolesPermisos } from '../entities/entities/RolesPermisos.js';
 import { Sesiones } from '../entities/entities/Sesiones.js';
 import { Usuarios } from '../entities/entities/Usuarios.js';
 import { UsuariosRoles } from '../entities/entities/UsuariosRoles.js';
+import { AuditoriaService } from '../auditoria/auditoria.service.js';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly usuariosRolesRepository: Repository<UsuariosRoles>,
     @InjectRepository(RolesPermisos)
     private readonly rolesPermisosRepository: Repository<RolesPermisos>,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   private async getRolesUsuario(usuarioId: number): Promise<string[]> {
@@ -118,6 +120,18 @@ export class AuthService {
     }
 
     const permisos = await this.getPermisosUsuario(usuarioEncontrado.id);
+    await this.auditoriaService.registrar({
+      usuarioId: usuarioEncontrado.id,
+      accion: 'LOGIN',
+      tablaAfectada: 'auth',
+      registroId: usuarioEncontrado.id,
+      ip: ipOrigen ?? null,
+      detalle: {
+        metodo: 'login',
+        usuario: usuarioEncontrado.nombre,
+        correo: usuarioEncontrado.correo,
+      },
+    });
     const payload = {
       sub: usuarioEncontrado.id,
       roles,

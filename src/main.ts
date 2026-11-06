@@ -22,9 +22,31 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       exceptionFactory: (errors) => {
+        const traducir = (mensaje: string) => {
+          const texto = String(mensaje)
+            .replace(/should not be empty/gi, 'no puede estar vacío')
+            .replace(/should be a valid/gi, 'debe ser un valor válido')
+            .replace(/must be a string/gi, 'debe ser texto')
+            .replace(/must be a number/gi, 'debe ser numérico')
+            .replace(/must be a boolean/gi, 'debe ser booleano')
+            .replace(/must be an instance of/gi, 'debe ser una instancia de')
+            .replace(/must be a valid UUID/gi, 'debe ser un UUID válido')
+            .replace(/must be longer than or equal to/gi, 'debe tener longitud mayor o igual a')
+            .replace(/must be shorter than or equal to/gi, 'debe tener longitud menor o igual a');
+
+          const coincidencia = texto.match(/^([A-Za-z0-9_]+)\s+(.*)$/);
+          if (coincidencia) {
+            const campo = coincidencia[1].replace(/_/g, ' ');
+            return `${campo} ${coincidencia[2]}`;
+          }
+
+          return texto;
+        };
+
         const message = errors
-          .map((error) => Object.values(error.constraints ?? {}))
+          .map((error) => Object.values(error.constraints ?? {}).map(traducir))
           .flat()
+          .filter(Boolean)
           .join('; ');
 
         return new BadRequestException({

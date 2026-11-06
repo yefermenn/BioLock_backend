@@ -6,10 +6,12 @@ import { Sesiones } from '../entities/entities/Sesiones.js';
 import { Usuarios } from '../entities/entities/Usuarios.js';
 import { UsuariosRoles } from '../entities/entities/UsuariosRoles.js';
 import { RolesPermisos } from '../entities/entities/RolesPermisos.js';
+import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Usuarios, Sesiones, UsuariosRoles, RolesPermisos]),
+    AuditoriaModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

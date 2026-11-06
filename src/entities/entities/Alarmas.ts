@@ -42,9 +42,6 @@ export class Alarmas {
   @Column("text", { name: "observaciones", nullable: true })
   observaciones: string | null;
 
-  @Column("text", { name: "observaciones_resolucion", nullable: true })
-  observacionesResolucion: string | null;
-
   @Column("timestamp with time zone", {
     name: "timestamp",
     default: () => "now()",

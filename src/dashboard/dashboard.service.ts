@@ -7,14 +7,28 @@ export class DashboardService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async resumen() {
+    const fechaLocal = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+
     const accesoHoy = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM public.accesos WHERE timestamp >= date_trunc('day', now())`,
+      `SELECT COUNT(*)::int AS total
+       FROM public.accesos
+       WHERE (timestamp AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date`,
     );
     const salidasHoy = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM public.accesos WHERE tipo_acceso = 'salida' AND timestamp >= date_trunc('day', now())`,
+      `SELECT COUNT(*)::int AS total
+       FROM public.accesos
+       WHERE tipo_acceso = 'salida'
+         AND (timestamp AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date`,
     );
     const intentosHoy = await this.dataSource.query(
-      `SELECT COUNT(*)::int AS total FROM public.intentos_fallidos WHERE timestamp >= date_trunc('day', now())`,
+      `SELECT COUNT(*)::int AS total
+       FROM public.intentos_fallidos
+       WHERE (timestamp AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date`,
     );
     const alarmasActivas = await this.dataSource.query(
       `SELECT COUNT(*)::int AS total FROM public.alarmas WHERE estado = 'activa'`,
@@ -51,7 +65,7 @@ export class DashboardService {
     );
 
     return {
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: fechaLocal,
       accesos_hoy: Number(accesoHoy[0]?.total ?? 0),
       salidas_hoy: Number(salidasHoy[0]?.total ?? 0),
       intentos_fallidos_hoy: Number(intentosHoy[0]?.total ?? 0),
@@ -77,16 +91,16 @@ export class DashboardService {
     const rows = await this.dataSource.query(
       `WITH rango AS (
          SELECT generate_series(
-           date_trunc('day', now() - ($1 || ' days')::interval),
-           date_trunc('day', now()),
+           ((now() AT TIME ZONE 'America/Bogota')::date - ($1 || ' days')::integer)::timestamp,
+           (now() AT TIME ZONE 'America/Bogota')::date,
            interval '1 day'
          )::date AS fecha
        )
        SELECT
-         to_char(r.fecha AT TIME ZONE 'America/Bogota', 'YYYY-MM-DD') AS fecha,
-         COALESCE((SELECT COUNT(*)::int FROM public.accesos a WHERE a.timestamp::date = r.fecha), 0) AS accesos,
-         COALESCE((SELECT COUNT(*)::int FROM public.intentos_fallidos i WHERE i.timestamp::date = r.fecha), 0) AS intentos_fallidos,
-         COALESCE((SELECT COUNT(*)::int FROM public.alarmas al WHERE al.timestamp::date = r.fecha), 0) AS alarmas
+         to_char(r.fecha, 'YYYY-MM-DD') AS fecha,
+         COALESCE((SELECT COUNT(*)::int FROM public.accesos a WHERE (a.timestamp AT TIME ZONE 'America/Bogota')::date = r.fecha), 0) AS accesos,
+         COALESCE((SELECT COUNT(*)::int FROM public.intentos_fallidos i WHERE (i.timestamp AT TIME ZONE 'America/Bogota')::date = r.fecha), 0) AS intentos_fallidos,
+         COALESCE((SELECT COUNT(*)::int FROM public.alarmas al WHERE (al.timestamp AT TIME ZONE 'America/Bogota')::date = r.fecha), 0) AS alarmas
        FROM rango r
        ORDER BY r.fecha DESC`,
       [Number(dias)],
