@@ -22,7 +22,7 @@ export class AlarmasController {
   @Permisos('resolver_alarmas')
   resolver(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: { estado?: 'resuelta' | 'falsa_alarma'; observaciones?: string; observaciones_resolucion?: string; nota?: string; resuelta_por?: number },
+    @Body() dto: { estado?: 'resuelta' | 'falsa_alarma'; observaciones?: string; observaciones_resolucion?: string; nota?: string; nota_resolucion?: string; resuelta_por?: number },
     @Req() req: any,
   ) {
     return this.service.resolver(id, dto, req?.user ?? null);

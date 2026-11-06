@@ -41,7 +41,7 @@ export class AlarmasService {
         estado: alarma.estado,
         fecha: alarma.timestamp,
         observaciones: alarma.observaciones,
-        observaciones_resolucion: null,
+        observaciones_resolucion: alarma.observacionesResolucion ?? null,
         resuelta_por: this.mapResueltaPor(alarma),
         resuelta_en: alarma.resueltaEn,
         fecha_resolucion: alarma.resueltaEn,
@@ -68,8 +68,8 @@ export class AlarmasService {
       id: alarma.id,
       estado: alarma.estado,
       observaciones: alarma.observaciones,
-      observaciones_resolucion: null,
-      nota_resolucion: null,
+      observaciones_resolucion: alarma.observacionesResolucion ?? null,
+      nota_resolucion: alarma.observacionesResolucion ?? null,
       resuelta_por: this.mapResueltaPor(alarma),
       resuelta_en: alarma.resueltaEn,
       fecha_resolucion: alarma.resueltaEn,
@@ -80,6 +80,7 @@ export class AlarmasService {
         id: item.id,
         dispositivo_id: item.dispositivoId,
         score_obtenido: item.scoreObtenido,
+        motivo: item.motivo,
         timestamp: item.timestamp,
       })),
     };
@@ -95,10 +96,23 @@ export class AlarmasService {
       return { ok: false, error: 'conflicto', mensaje: 'La alarma ya fue resuelta.' };
     }
 
-    const fechaResolucion = new Date();
+    const fechaBase = new Date();
+    const fechaHoraAlarma = alarma.timestamp ? new Date(alarma.timestamp) : null;
+    const fechaResolucion = new Date(
+      Math.max(fechaBase.getTime(), fechaHoraAlarma ? fechaHoraAlarma.getTime() : fechaBase.getTime()),
+    );
+    const nota =
+      dto.observaciones_resolucion !== undefined && dto.observaciones_resolucion !== null
+        ? String(dto.observaciones_resolucion)
+        : dto.nota_resolucion !== undefined && dto.nota_resolucion !== null
+          ? String(dto.nota_resolucion)
+          : dto.nota !== undefined && dto.nota !== null
+            ? String(dto.nota)
+            : alarma.observacionesResolucion ?? alarma.observaciones;
     const usuarioId = usuarioActual?.id ?? (dto.resuelta_por !== undefined ? Number(dto.resuelta_por) : null);
 
     alarma.estado = String(dto.estado ?? 'resuelta');
+    alarma.observacionesResolucion = nota ?? null;
     alarma.resueltaEn = fechaResolucion;
     alarma.resueltaPor = usuarioId !== null && Number.isFinite(usuarioId) ? Number(usuarioId) : alarma.resueltaPor;
     await this.alarmasRepository.save(alarma);
@@ -109,8 +123,8 @@ export class AlarmasService {
       estado: alarma.estado,
       resuelta_por: alarma.resueltaPor,
       resuelta_en: alarma.resueltaEn,
-      observaciones_resolucion: null,
-      nota_resolucion: null,
+      observaciones_resolucion: alarma.observacionesResolucion,
+      nota_resolucion: alarma.observacionesResolucion,
       fecha_resolucion: alarma.resueltaEn,
     };
   }
