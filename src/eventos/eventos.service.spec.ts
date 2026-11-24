@@ -98,4 +98,50 @@ describe('EventosService', () => {
       },
     });
   });
+
+  it('registra una salida anónima ignorando usuario y puntaje', async () => {
+    const query = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM public.dispositivos')) {
+        return [{ id: 9, zona_id: 3 }];
+      }
+      if (sql.includes('information_schema.columns')) {
+        if (sql.includes("column_name = $2") && sql.includes('id_local')) {
+          return [{ 1: 1 }];
+        }
+        return [];
+      }
+      if (sql.includes('SELECT 1') && sql.includes('FROM public.accesos')) {
+        return [];
+      }
+      if (sql.includes('INSERT INTO public.accesos')) {
+        return [{ id: 33 }];
+      }
+      return [];
+    });
+
+    const service = new EventosService({ query } as any);
+
+    const result = await service.registrarEvento('Bearer token-device-123', {
+      id_local: 123,
+      tipo: 'salida',
+      timestamp: '2026-11-23T20:10:00-05:00',
+      usuario_id: 77,
+      score: 0.998,
+    });
+
+    expect(result.status).toBe(201);
+    expect(result.data).toMatchObject({
+      tipo: 'salida',
+      id_local: '123',
+      usuario_id: null,
+      dispositivo_id: 9,
+      zona_id: 3,
+      acceso_id: 33,
+    });
+
+    const insertCall = query.mock.calls.find(([sql]) =>
+      sql.includes('INSERT INTO public.accesos'),
+    );
+    expect(insertCall?.[1]).toEqual(expect.arrayContaining([null, 9, 3, 'salida', null]));
+  });
 });

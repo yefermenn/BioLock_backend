@@ -19,7 +19,9 @@ export class EventosService {
     const tipo = this.normalizarTipo(body.tipo);
     const idLocal = this.normalizarIdLocal(body.id_local ?? body.idLocal);
     const score = this.normalizarScore(body.score);
-    const timestamp = this.normalizarFecha(body.ocurrido_en ?? body.ocurridoEn ?? new Date());
+    const timestamp = this.normalizarFecha(
+      body.timestamp ?? body.ocurrido_en ?? body.ocurridoEn ?? new Date(),
+    );
 
     if (!authorization || !authorization.startsWith('Bearer ')) {
       throw new UnauthorizedException({
@@ -142,11 +144,11 @@ export class EventosService {
         const accesoId = await this.insertarAcceso({
           dispositivoId,
           zonaId,
-          usuarioId: usuarioId ?? null,
+          usuarioId: null,
           tipoAcceso: 'salida',
           score: null,
           idLocal,
-          origen: String(body.origen ?? 'camara'),
+          origen: String(body.origen ?? 'boton_interior'),
           timestamp,
         });
 
@@ -156,7 +158,7 @@ export class EventosService {
           data: {
             tipo,
             id_local: idLocal,
-            usuario_id: usuarioId,
+            usuario_id: null,
             dispositivo_id: dispositivoId,
             zona_id: zonaId,
             acceso_id: accesoId,
