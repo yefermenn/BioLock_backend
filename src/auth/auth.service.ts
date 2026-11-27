@@ -14,7 +14,23 @@ import { RolesPermisos } from '../entities/entities/RolesPermisos.js';
 import { Sesiones } from '../entities/entities/Sesiones.js';
 import { Usuarios } from '../entities/entities/Usuarios.js';
 import { UsuariosRoles } from '../entities/entities/UsuariosRoles.js';
-import { AuditoriaService } from '../auditoria/auditoria.service.js';
+
+/**
+ * SESION (25 nov): el panel web manda la cabecera `X-Cliente: panel`.
+ * Para el panel, la sesión (refresh token) vence tras PANEL_SESION_MIN minutos sin renovarse
+ * (por defecto 30: 15 de inactividad del panel + 15 del access token).
+ * La app móvil no manda la cabecera y conserva REFRESH_EXPIRES_DAYS (30 días).
+ * Usa la columna sesiones.expira_en que ya existe: no cambia tablas.
+ */
+export type Cliente = 'panel' | 'otro';
+
+export function venceSesion(cliente: Cliente, ahora = Date.now()): Date {
+  const ms =
+    cliente === 'panel'
+      ? Number(process.env.PANEL_SESION_MIN ?? 30) * 60_000
+      : Number(process.env.REFRESH_EXPIRES_DAYS ?? 30) * 86_400_000;
+  return new Date(ahora + ms);
+}
 
 @Injectable()
 export class AuthService {
@@ -27,7 +43,6 @@ export class AuthService {
     private readonly usuariosRolesRepository: Repository<UsuariosRoles>,
     @InjectRepository(RolesPermisos)
     private readonly rolesPermisosRepository: Repository<RolesPermisos>,
-    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   private async getRolesUsuario(usuarioId: number): Promise<string[]> {
@@ -83,7 +98,7 @@ export class AuthService {
     };
   }
 
-  async login(usuario: string, contrasena: string, ipOrigen?: string, userAgent?: string) {
+  async login(usuario: string, contrasena: string, ipOrigen?: string, userAgent?: string, cliente: Cliente = 'otro') {
     const valor = usuario?.trim();
     if (!valor || !contrasena) {
       throw new UnauthorizedException({
@@ -120,18 +135,6 @@ export class AuthService {
     }
 
     const permisos = await this.getPermisosUsuario(usuarioEncontrado.id);
-    await this.auditoriaService.registrar({
-      usuarioId: usuarioEncontrado.id,
-      accion: 'LOGIN',
-      tablaAfectada: 'auth',
-      registroId: usuarioEncontrado.id,
-      ip: ipOrigen ?? null,
-      detalle: {
-        metodo: 'login',
-        usuario: usuarioEncontrado.nombre,
-        correo: usuarioEncontrado.correo,
-      },
-    });
     const payload = {
       sub: usuarioEncontrado.id,
       roles,
@@ -144,7 +147,7 @@ export class AuthService {
     });
     const refreshToken = randomBytes(32).toString('hex');
     const refreshHash = createHash('sha256').update(refreshToken).digest('hex');
-    const expiresAt = new Date(Date.now() + Number(process.env.REFRESH_EXPIRES_DAYS ?? 30) * 86400000);
+    const expiresAt = venceSesion(cliente);
 
     await this.sesionesRepository.save({
       usuarioId: usuarioEncontrado.id,
@@ -168,7 +171,7 @@ export class AuthService {
     };
   }
 
-  async refresh(refreshToken: string, ipOrigen?: string, userAgent?: string) {
+  async refresh(refreshToken: string, ipOrigen?: string, userAgent?: string, cliente: Cliente = 'otro') {
     if (!refreshToken) {
       throw new UnauthorizedException({
         error: 'no_autenticado',
@@ -220,7 +223,7 @@ export class AuthService {
       tokenJti: nuevoHash.slice(0, 64),
       ipOrigen: ipOrigen ?? sesion.ipOrigen,
       userAgent: userAgent ?? sesion.userAgent,
-      expiraEn: new Date(Date.now() + Number(process.env.REFRESH_EXPIRES_DAYS ?? 30) * 86400000),
+      expiraEn: venceSesion(cliente),
       revocada: false,
     });
 

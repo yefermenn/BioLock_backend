@@ -2,19 +2,18 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { BloqueoLogin } from './bloqueo-login.js';
 import { Sesiones } from '../entities/entities/Sesiones.js';
 import { Usuarios } from '../entities/entities/Usuarios.js';
 import { UsuariosRoles } from '../entities/entities/UsuariosRoles.js';
 import { RolesPermisos } from '../entities/entities/RolesPermisos.js';
-import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Usuarios, Sesiones, UsuariosRoles, RolesPermisos]),
-    AuditoriaModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, BloqueoLogin],
   exports: [AuthService],
 })
 export class AuthModule {}
