@@ -15,6 +15,7 @@ import type { Reportes } from "./Reportes.js";
 import type { Sesiones } from "./Sesiones.js";
 import type { UsuariosRoles } from "./UsuariosRoles.js";
 import type { Visitantes } from "./Visitantes.js";
+import type { PushTokens } from './PushTokens.js';
 
 @Index("usuarios_cedula_key", ["cedula"], { unique: true })
 @Index("usuarios_correo_key", ["correo"], { unique: true })
@@ -68,6 +69,15 @@ export class Usuarios {
   })
   updatedAt: Date;
 
+  @Column('boolean', { name: 'notif_push', default: () => 'true' })
+  notifPush: boolean;
+
+  @Column('boolean', { name: 'notif_intrusos', default: () => 'true' })
+  notifIntrusos: boolean;
+
+  @Column('boolean', { name: 'notif_denegados', default: () => 'false' })
+  notifDenegados: boolean;
+
   @OneToMany("UsuariosRoles", (usuariosRoles: UsuariosRoles) => usuariosRoles.asignadoPor)
   usuariosRoles: UsuariosRoles[];
 
@@ -83,6 +93,7 @@ export class Usuarios {
   reportes?: Reportes[];
   sesiones?: Sesiones[];
   visitantes?: Visitantes[];
+  pushTokens?: PushTokens[];
 
   constructor(init?: Partial<Usuarios>) {
     Object.assign(this, init);

@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { Usuarios } from '../entities/entities/Usuarios.js';
 import { UsuariosRoles } from '../entities/entities/UsuariosRoles.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
+import { PushTokens } from '../entities/entities/PushTokens.js';
 
 @Injectable()
 export class UsuariosService {
@@ -13,6 +14,8 @@ export class UsuariosService {
     private readonly usuariosRepository: Repository<Usuarios>,
     @InjectRepository(UsuariosRoles)
     private readonly usuariosRolesRepository: Repository<UsuariosRoles>,
+    @InjectRepository(PushTokens)
+    private readonly pushTokensRepository: Repository<PushTokens>,
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
@@ -151,5 +154,83 @@ export class UsuariosService {
   async cambiarEstado(id: number, activo: boolean) {
     await this.usuariosRepository.update(id, { activo });
     return { ok: true, id, activo };
+  }
+
+  async agregarTokenPush(usuarioId: number, token: string) {
+    const existe = await this.pushTokensRepository.findOne({ where: { usuarioId, token } });
+    if (existe) {
+      return { ok: true, mensaje: 'El token ya está registrado.' };
+    }
+
+    const nuevoToken = this.pushTokensRepository.create({ usuarioId, token });
+    await this.pushTokensRepository.save(nuevoToken);
+
+    return { ok: true, data: nuevoToken };
+  }
+
+  async eliminarTokenPush(usuarioId: number, token: string) {
+    const resultado = await this.pushTokensRepository.delete({ usuarioId, token });
+    if (resultado.affected === 0) {
+      throw new NotFoundException('Token no encontrado');
+    }
+
+    return { ok: true, mensaje: 'Token eliminado.' };
+  }
+
+  async listarTokensPush(usuarioId: number) {
+    const tokens = await this.pushTokensRepository.find({ where: { usuarioId } });
+    return { ok: true, data: tokens };
+  }
+
+  async upsertPushToken(usuarioId: number, dto: { token: string; plataforma: 'android' | 'ios' }) {
+    const existentePorUsuario = await this.pushTokensRepository.findOne({ where: { usuarioId, token: dto.token } });
+    const otroUsuario = await this.pushTokensRepository.findOne({ where: { token: dto.token } });
+
+    if (otroUsuario && otroUsuario.usuarioId !== usuarioId) {
+      await this.pushTokensRepository.update(otroUsuario.id, {
+        usuarioId,
+        plataforma: dto.plataforma,
+        updatedAt: new Date(),
+      });
+    } else if (existentePorUsuario) {
+      await this.pushTokensRepository.update(existentePorUsuario.id, {
+        plataforma: dto.plataforma,
+        updatedAt: new Date(),
+      });
+    } else {
+      await this.pushTokensRepository.save(this.pushTokensRepository.create({
+        usuarioId,
+        token: dto.token,
+        plataforma: dto.plataforma,
+      }));
+    }
+  }
+
+  async deletePushToken(usuarioId: number, token: string) {
+    await this.pushTokensRepository.delete({ usuarioId, token });
+  }
+
+  async getNotificationPreferences(usuarioId: number) {
+    const usuario = await this.usuariosRepository.findOne({ where: { id: usuarioId } });
+    if (!usuario) {
+      throw new NotFoundException({ error: 'usuario_no_encontrado', mensaje: 'El usuario no existe.' });
+    }
+    return {
+      push: usuario.notifPush ?? true,
+      intrusos: usuario.notifIntrusos ?? true,
+      denegados: usuario.notifDenegados ?? false,
+    };
+  }
+
+  async updateNotificationPreferences(usuarioId: number, dto: { push?: boolean; intrusos?: boolean; denegados?: boolean }) {
+    const usuario = await this.usuariosRepository.findOne({ where: { id: usuarioId } });
+    if (!usuario) {
+      throw new NotFoundException({ error: 'usuario_no_encontrado', mensaje: 'El usuario no existe.' });
+    }
+    if (dto.push !== undefined) usuario.notifPush = dto.push;
+    if (dto.intrusos !== undefined) usuario.notifIntrusos = dto.intrusos;
+    if (dto.denegados !== undefined) usuario.notifDenegados = dto.denegados;
+    await this.usuariosRepository.save(usuario);
+    return this.getNotificationPreferences(usuarioId);
   }
 }

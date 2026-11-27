@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Alarmas } from '../entities/entities/Alarmas.js';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class AlarmasService {
   constructor(
     @InjectRepository(Alarmas)
     private readonly alarmasRepository: Repository<Alarmas>,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
   private mapResueltaPor(alarma: Partial<{ resueltaPor: number | null; resueltaPor2?: { id: number; nombre: string } }>) {
@@ -34,24 +37,27 @@ export class AlarmasService {
       relations: { zona: true, dispositivo: true, resueltaPor2: true },
       take: 20,
     });
-
-    return {
-      items: items.map((alarma) => ({
-        id: alarma.id,
-        estado: alarma.estado,
-        fecha: alarma.timestamp,
-        observaciones: alarma.observaciones,
-        observaciones_resolucion: alarma.observacionesResolucion ?? null,
-        resuelta_por: this.mapResueltaPor(alarma),
-        resuelta_en: alarma.resueltaEn,
-        fecha_resolucion: alarma.resueltaEn,
-        zona: alarma.zona ? { id: alarma.zona.id, nombre: alarma.zona.nombre } : null,
-        dispositivo: alarma.dispositivo ? { id: alarma.dispositivo.id, nombre: alarma.dispositivo.nombre } : null,
-      })),
-      total,
-      pagina: 1,
-      limite: 20,
-    };
+    const mapped = await Promise.all(
+      items.map(async (alarma) => {
+        const metricas = await this.obtenerMetricas(alarma.id);
+        return {
+          id: alarma.id,
+          estado: alarma.estado,
+          fecha: alarma.timestamp,
+          observaciones: alarma.observaciones,
+          observaciones_resolucion: alarma.observacionesResolucion ?? null,
+          resuelta_por: this.mapResueltaPor(alarma),
+          resuelta_en: alarma.resueltaEn,
+          fecha_resolucion: alarma.resueltaEn,
+          zona: alarma.zona ? { id: alarma.zona.id, nombre: alarma.zona.nombre } : null,
+          dispositivo: alarma.dispositivo ? { id: alarma.dispositivo.id, nombre: alarma.dispositivo.nombre } : null,
+          foto: metricas.foto,
+          intentos: metricas.intentos,
+          score: metricas.score,
+        };
+      }),
+    );
+    return { items: mapped, total, pagina: 1, limite: 20 };
   }
 
   async findById(id: number) {
@@ -59,11 +65,8 @@ export class AlarmasService {
       where: { id },
       relations: { zona: true, dispositivo: true, intentosFallidos: true, resueltaPor2: true },
     });
-
-    if (!alarma) {
-      return null;
-    }
-
+    if (!alarma) return null;
+    const metricas = await this.obtenerMetricas(alarma.id);
     return {
       id: alarma.id,
       estado: alarma.estado,
@@ -83,6 +86,9 @@ export class AlarmasService {
         motivo: item.motivo,
         timestamp: item.timestamp,
       })),
+      foto: metricas.foto,
+      intentos: metricas.intentos,
+      score: metricas.score,
     };
   }
 
@@ -132,5 +138,31 @@ export class AlarmasService {
   async conteo() {
     const total = await this.alarmasRepository.count({ where: { estado: 'activa' } });
     return { activas: total };
+  }
+
+  private async obtenerMetricas(alarmaId: number) {
+    const intentos = await this.dataSource.query(
+      `SELECT COUNT(*)::int AS total,
+              MAX(score_obtenido)::float AS score
+       FROM public.intentos_fallidos
+       WHERE alarma_id = $1`, [alarmaId],
+    ).catch(() => [{ total: 0, score: null }]);
+    const evidencia = await this.dataSource.query(
+      `SELECT expirada, expira_en, ruta_archivo
+       FROM public.evidencias_intrusos
+       WHERE alarma_id=$1 LIMIT 1`, [alarmaId],
+    ).catch(() => []);
+
+    let foto: 'disponible' | 'expirada' | 'sin_foto' = 'sin_foto';
+    if (evidencia?.length) {
+      foto = evidencia[0].expirada || new Date(evidencia[0].expira_en).getTime() <= Date.now()
+        ? 'expirada'
+        : 'disponible';
+    }
+    return {
+      foto,
+      intentos: Number(intentos?.[0]?.total ?? 0),
+      score: intentos?.[0]?.score == null ? null : Number(intentos[0].score),
+    };
   }
 }

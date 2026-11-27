@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -20,6 +21,8 @@ import { EventosModule } from './eventos/eventos.module.js';
 import { OrdenesModule } from './ordenes/ordenes.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { PermisosGuard } from './common/guards/permisos.guard.js';
+import { EvidenciasModule } from './evidencias/evidencias.module.js';
+import { NotificacionesPushModule } from './notificaciones-push/notificaciones-push.module.js';
 
 @Module({
   imports: [
@@ -51,6 +54,9 @@ import { PermisosGuard } from './common/guards/permisos.guard.js';
     AuditoriaModule,
     EventosModule,
     OrdenesModule,
+    EvidenciasModule,
+    NotificacionesPushModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [

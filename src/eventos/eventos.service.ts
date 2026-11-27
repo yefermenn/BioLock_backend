@@ -8,12 +8,16 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { createHash } from 'node:crypto';
 import { DataSource } from 'typeorm';
+import { NotificacionesPushService } from '../notificaciones-push/notificaciones-push.service.js';
 
 export type EventoTipo = 'permitido' | 'denegado' | 'alarma' | 'remoto' | 'salida';
 
 @Injectable()
 export class EventosService {
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly notificacionesPush?: NotificacionesPushService,
+  ) {}
 
   async registrarEvento(authorization: string | undefined, body: Record<string, unknown>) {
     const tipo = this.normalizarTipo(body.tipo);
@@ -176,6 +180,8 @@ export class EventosService {
           timestamp,
         });
 
+        void this.notificarDenegado(dispositivoId, zonaId, Number(intentoId));
+
         return {
           status: 201,
           mensaje: 'Intento fallido registrado',
@@ -198,6 +204,8 @@ export class EventosService {
         });
 
         await this.vincularUltimoIntentoFallidoConAlarma(dispositivoId, alarmaId, timestamp);
+
+        void this.notificarAlarma(dispositivoId, zonaId, alarmaId);
 
         return {
           status: 201,
@@ -571,5 +579,32 @@ export class EventosService {
     }
 
     return new Date();
+  }
+
+  private async notificarDenegado(dispositivoId: number, zonaId: number, alertaId: number) {
+    const zona = await this.obtenerNombreZona(zonaId);
+    const intentos = await this.contarIntentosDispositivo(dispositivoId);
+    await this.notificacionesPush?.enviar('denegado', alertaId, zona, intentos);
+  }
+
+  private async notificarAlarma(dispositivoId: number, zonaId: number, alarmaId: number) {
+    const zona = await this.obtenerNombreZona(zonaId);
+    const intentos = await this.contarIntentosAlarma(alarmaId);
+    await this.notificacionesPush?.enviar('alarma', alarmaId, zona, intentos);
+  }
+
+  private async obtenerNombreZona(zonaId: number) {
+    const filas = await this.dataSource.query('SELECT nombre FROM public.zonas WHERE id=$1 LIMIT 1', [zonaId]);
+    return String(filas?.[0]?.nombre ?? 'zona desconocida');
+  }
+
+  private async contarIntentosDispositivo(dispositivoId: number) {
+    const filas = await this.dataSource.query('SELECT COUNT(*)::int AS total FROM public.intentos_fallidos WHERE dispositivo_id=$1', [dispositivoId]);
+    return Number(filas?.[0]?.total ?? 1);
+  }
+
+  private async contarIntentosAlarma(alarmaId: number) {
+    const filas = await this.dataSource.query('SELECT COUNT(*)::int AS total FROM public.intentos_fallidos WHERE alarma_id=$1', [alarmaId]);
+    return Number(filas?.[0]?.total ?? 1);
   }
 }
